@@ -1,5 +1,22 @@
 {% extends "base.html" %}
 {% block title %}-Change-{% endblock %}
 {% block content %}
-<h1> jau, das ist die erste Testseite</h1>
+<h1 align=center>Notes from {{ user.firstname }}</h1>
+    <ul class="list-group list-group-flush" id="notes">
+    {% for note in user.notes %}
+        <li class="list-group-item">
+            {{ note.data }}
+        <button type="button" class="close" onClick="deletNote({{ note.id }})">
+            <span aria-hidden="true">&times;</span>
+        </button>
+        </li>
+    {% endfor %}
+    </ul>
+    <form method="POST">
+        <textarea class="form-control" id="note" name="note"></textarea>
+        <div align="center">
+            <br />
+            <button type="submit" class="btn btn-primary">Ad Note</button>
+        </div>
+    </form>
 {% endblock %}
