@@ -16,22 +16,26 @@
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
+
       <ul class="navbar-nav">
+          {% if user.is_authenticated %}
         <li class="nav-item">
           <a class="nav-link active" id="home" href="/">Home</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" id="login" href="/login">Login</a>
+          <a class="nav-link" id="login" href="/logout">Logout</a>
         </li>
+          {% else %}
         <li class="nav-item">
           <a class="nav-link" id="SignUp" href="/sign-up">Sign up</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" id="logout" href="/logout">logout</a>
+          <a class="nav-link" id="logout" href="/login">Login</a>
         </li>
         <li class="nav-item">
           <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Disabled</a>
         </li>
+          {% endif %}
       </ul>
     </div>
   </div>
