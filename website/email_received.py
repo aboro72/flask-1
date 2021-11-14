@@ -1,97 +1,56 @@
-import sqlite3
-import imapclient
-import pyzmail
+import email
+import imaplib
+import pandas as pd
 
 
-class Storage(object):
 
-    """Manages the storage for the downloaded mails."""
+EMAIL = 'andreas.borowczak@gmail.com'
+PASSWORD = 'quaSeu2ips2208b'
+SERVER = 'imap.gmail.com'
 
-    def __init__(self):
-        """Initializes the storage object. """
-        self.connection = sqlite3.connect('database.db')
-        self.cursor = self.connection.cursor()
+von = []
+betreff = []
+inhalt = []
 
-    def save_to_db(self, mails):
-        """Saves the emails to the database.
+mail = imaplib.IMAP4_SSL(SERVER)
+mail.login(EMAIL, PASSWORD)
 
-        :emails: a list of dictionaries with information on the emails
+mail.select('inbox')
 
-        """
-        self.create_table()
-        with self.connection:
-            print('Inserting only new mails.')
-            sql = """INSERT OR IGNORE INTO email_received(sender, receiver, subject,
-            text, html) VALUES (:sender, :receiver, :subject, :text,
-            :html)"""
-            self.cursor.executemany(sql, mails)
+status, data = mail.search(None, 'ALL')
 
+mail_ids = []
 
-class Downloader(object):
+for block in data:
+    mail_ids += block.split()
 
-    """Responsible for downloading the emails."""
+for i in mail_ids:
+    status, data = mail.fetch(i, '(RFC822)')
 
-    def __init__(self):
-        """Creating the downloader. """
-        print('Trying to connect to IMAP client...')
-        self.imap = imapclient.IMAPClient('mail.gmail.com', ssl=True)
-        self.imap.login('andreas.borowczak@gmail.com', 'quaSeu2iPs2208b')
+    for response_part in data:
 
-    def save_as_dict(self, messages):
-        """Saves information on the emails in a list of dictionaries.
+        if isinstance(response_part, tuple):
+            message = email.message_from_bytes(response_part[1])
 
-        :messages: a list of parsed emails
-        :returns: a list of dictionaries with information on each email
+            mail_from = message['from']
+            mail_subject = message['subject']
 
-        """
-        email_list = []
-        for m in messages:
-            mail = {}
-            mail['sender']   = m.get_address('from')[1]
-            mail['receiver'] = m.get_address('to')[1]
-            mail['subject']  = m.get_subject()
-            if m.text_part != None:
-                mail['text_content'] = m.text_part.get_payload().decode(
-                    m.text_part.charset)
+            if message.is_multipart():
+                mail_content = ''
+
+                for part in message.get_payload():
+
+                    if part.get_content_type() == 'text/plain':
+                        mail_content += part.get_payload()
             else:
-                mail['text_content'] = "None"
-            if m.html_part != None:
-                mail['html_content'] = m.html_part.get_payload().decode(
-                    m.html_part.charset)
-            else:
-                mail['html_content'] = "None"
-            email_list.append(mail)
-        print('Number of downloaded emails: ' + str(len(email_list)))
-        return email_list
 
-    def get_emails(self):
-        """Looks for new mails and saves them in memory as a list of
-        dictionaries.
+                mail_content = message.get_payload()
 
-        :returns: a list of parsed emails as dictionaries
-
-        """
-        try:
-            print('Opening INBOX and looking for unseen mail.')
-            self.imap.select_folder('INBOX', readonly=True)
-            mails = self.imap.search(['UNSEEN'])
-            raw_messages = self.imap.fetch(mails, ['BODY[]'])
-            messages = [pyzmail.PyzMessage.factory(raw_messages[n][b'BODY[]'])
-                        for n in raw_messages]
-            email_list = self.save_as_dict(messages)
-        finally:
-            print('Logging out.')
-            self.imap.logout()
-        return email_list
-
-
-def main():
-    """Starts the script if run from the command line.
-    """
-    downloader = Downloader()
-    emails = downloader.get_emails()
-    storage = Storage()
-    storage.save_to_db(emails)
-
-if __name__ == "__main__":
-    main()
+            von.append(f'From: {mail_from}')
+            betreff.append(f'Subject: {mail_subject}')
+            inhalt.append(f'Content: {mail_content}')
+            # print(f'From: {mail_from}')
+            # print(f'Subject: {mail_subject}')
+            # print(f'Content: {mail_content}')
+email = pd.DataFrame({'Sender': von, 'Betreff': betreff, 'Text': inhalt})
+email.to_excel('email..xlsx', index=False)
