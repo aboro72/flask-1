@@ -29,10 +29,8 @@ class User_rules(db.Model):
 class email_received(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sender = db.Column(db.String(150))
-    receiver = db.Column(db.String(150))
     subject = db.Column(db.String(150))
     text = db.Column(db.String(10000))
-    html = db.Column(db.String(10000))
     date = db.Column(db.DateTime(timezone=True), default=func.now())
     email = db.relationship('Ticket')
 
